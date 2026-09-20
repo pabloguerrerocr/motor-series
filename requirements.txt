@@ -1,0 +1,6 @@
+pandas>=2.0
+numpy>=1.26
+statsmodels>=0.14
+duckdb>=1.0
+PyYAML>=6.0
+tabulate>=0.9

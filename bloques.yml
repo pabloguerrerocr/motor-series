@@ -1,0 +1,38 @@
+# Declarás el bloque acá. El motor corre el diagnóstico y te dice qué te estás
+# jugando; no cambia la especificación por su cuenta.
+#
+# El ORDEN de `series` es el orden de Cholesky: primero lo más exógeno.
+# Cambiarlo cambia las impulso-respuesta. Es una decisión económica.
+
+fuente:
+  tipo: duckdb
+  ruta: ../warehouse-sector-externo/sector_externo.duckdb
+  consulta: SELECT serie_id, fecha, valor FROM main_marts.mensual
+
+bloques:
+
+  - nombre: comercial
+    series: [ipi_eeuu, ffr, export_cr, itcer]
+    transformacion: log
+    sin_log: [ffr]            # las tasas van en nivel, no en logaritmo
+    especificacion: auto      # auto | var_niveles | var_diferencias | vecm
+    rezagos: 3                # auto usa el BIC
+    horizonte: 24
+
+  - nombre: financiero
+    series: [ipi_eeuu, ffr, reservas, tpm]
+    transformacion: log
+    sin_log: [ffr, tpm]
+    especificacion: auto
+    rezagos: 3
+    horizonte: 24
+
+  # Ejemplo deliberado de especificación mal pedida: sirve para ver el motor
+  # advirtiendo en vez de obedecer en silencio.
+  - nombre: financiero_mal_pedido
+    series: [ipi_eeuu, ffr, reservas, tpm]
+    transformacion: log
+    sin_log: [ffr, tpm]
+    especificacion: vecm
+    rezagos: 8
+    horizonte: 24
