@@ -1,5 +1,7 @@
 # Motor de diagnóstico para bloques de series de tiempo
 
+*[English version](README.en.md)*
+
 **Declarás el bloque en un archivo de configuración y el motor te dice qué te
 estás jugando antes de que cites un número.**
 
