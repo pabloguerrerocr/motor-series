@@ -10,9 +10,28 @@ diagnóstico, compara lo que pediste contra lo que dicen las pruebas y **te
 advierte cuando no encajan**.
 
 ```bash
+git clone https://github.com/pabloguerrerocr/motor-series.git
+cd motor-series
+pip install -r requirements.txt
 python motor.py                 # todos los bloques
 python motor.py financiero      # solo uno
 ```
+
+Corre solo, sin nada más: si no encuentra el warehouse, usa
+[`datos/mensual.csv`](datos/mensual.csv), una copia del mismo panel (8 series
+mensuales de FRED y del BCCR, 2015-2025, exportadas de `main_marts.mensual` de
+[warehouse-sector-externo](https://github.com/pabloguerrerocr/warehouse-sector-externo)).
+Las dos fuentes dan exactamente los mismos resultados.
+
+## Qué encuentra en los datos de mi trabajo de graduación
+
+Seis advertencias en los tres bloques de [`bloques.yml`](bloques.yml):
+
+| Bloque | Lo que pide | Lo que dice el motor |
+|---|---|---|
+| `comercial` | `auto` | VAR en diferencias (Johansen no encuentra cointegración). ADF y KPSS se contradicen en el ITCER, y los criterios de rezagos van de 2 (BIC) a 12 (AIC) |
+| `financiero` | `auto` | VECM (rango de Johansen 1). Los criterios de rezagos no coinciden |
+| `financiero_mal_pedido` | VECM con 8 rezagos | Tres advertencias: VECM sin cointegración, 4 observaciones por parámetro y criterios que no coinciden |
 
 ## Cómo se declara un bloque
 
@@ -61,7 +80,9 @@ BLOQUE  financiero_mal_pedido
       existe. Lo natural acá es VAR en diferencias.
     ! 132 observaciones para 33 parámetros por ecuación: 4.0 por parámetro.
       Debajo de 10 el modelo sobreajusta. Bajá rezagos o sacá una variable.
-    ! Los criterios de rezagos no coinciden: {'aic': 3, 'bic': 2, 'hqic': 2}.
+    ! Los criterios de rezagos no coinciden: {'aic': 3, 'bic': 2, 'hqic': 2, 'fpe': 3}.
+      BIC es el parsimonioso y AIC el generoso; con muestras cortas suele
+      convenir BIC.
 ```
 
 **El modelo se estima igual.** El motor no bloquea ni corrige por su cuenta: deja
@@ -100,8 +121,20 @@ salidas/<bloque>/
   reporte.md          <- las advertencias van primero
 ```
 
-## Requisitos
+## Con el warehouse completo
+
+Para leer directo de DuckDB, los tres repositorios van uno al lado del otro y el
+warehouse se construye primero:
 
 ```bash
-pip install pandas numpy statsmodels duckdb pyyaml tabulate
+git clone https://github.com/pabloguerrerocr/sector-externo-cr-eeuu.git
+git clone https://github.com/pabloguerrerocr/warehouse-sector-externo.git
+git clone https://github.com/pabloguerrerocr/motor-series.git
+cd warehouse-sector-externo
+pip install -r requirements.txt dbt-duckdb
+python 07_pruebas.py
+cd dbt && DBT_PROFILES_DIR=. dbt build && cd ../..
+cd motor-series && python motor.py
 ```
+
+Probado con Python 3.13, statsmodels 0.15 y DuckDB 2.0.
