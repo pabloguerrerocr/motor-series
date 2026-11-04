@@ -8,6 +8,9 @@ fuente:
   tipo: duckdb
   ruta: ../warehouse-sector-externo/sector_externo.duckdb
   consulta: SELECT serie_id, fecha, valor FROM main_marts.mensual
+  # Si el warehouse no esta construido (por ejemplo, en un clon de este repo
+  # solo), se usa esta copia del mismo panel, exportada de main_marts.mensual.
+  respaldo: datos/mensual.csv
 
 bloques:
 

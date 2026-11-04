@@ -44,14 +44,23 @@ for _cat in ("InterpolationWarning", "ValueWarning", "RuntimeWarning"):
 def cargar(cfg):
     """Devuelve el panel ancho: una columna por serie, índice de fechas."""
     f = cfg["fuente"]
-    if f["tipo"] == "duckdb":
+    tipo, ruta = f["tipo"], os.path.join(AQUI, f["ruta"])
+    if tipo == "duckdb" and not os.path.exists(ruta):
+        # El warehouse se arma con los repos sector-externo-cr-eeuu y
+        # warehouse-sector-externo. Si no esta, se usa la copia versionada.
+        respaldo = f.get("respaldo")
+        if not respaldo or not os.path.exists(os.path.join(AQUI, respaldo)):
+            sys.exit(f"No encuentro {ruta}. Construi el warehouse (ver README) "
+                     "o declara una fuente csv en bloques.yml.")
+        print(f"No encuentro el warehouse en {f['ruta']}: uso la copia {respaldo}\n")
+        tipo, ruta = "csv", os.path.join(AQUI, respaldo)
+    if tipo == "duckdb":
         import duckdb
-        ruta = os.path.join(AQUI, f["ruta"]) if not os.path.isabs(f["ruta"]) else f["ruta"]
         con = duckdb.connect(ruta, read_only=True)
         d = con.execute(f["consulta"]).df()
         con.close()
-    elif f["tipo"] == "csv":
-        d = pd.read_csv(os.path.join(AQUI, f["ruta"]), parse_dates=["fecha"])
+    elif tipo == "csv":
+        d = pd.read_csv(ruta, parse_dates=["fecha"])
     else:
         sys.exit(f"Fuente no soportada: {f['tipo']}")
     d["fecha"] = pd.to_datetime(d["fecha"])

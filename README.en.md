@@ -10,9 +10,29 @@ diagnostic battery, compares what you asked for against what the tests say and
 **warns you when they don't match**.
 
 ```bash
+git clone https://github.com/pabloguerrerocr/motor-series.git
+cd motor-series
+pip install -r requirements.txt
 python motor.py                 # all blocks
 python motor.py financiero      # just one
 ```
+
+It runs on its own: if it cannot find the warehouse, it uses
+[`datos/mensual.csv`](datos/mensual.csv), a copy of the same panel (8 monthly series
+from FRED and the Central Bank of Costa Rica, 2015-2025, exported from
+`main_marts.mensual` in
+[warehouse-sector-externo](https://github.com/pabloguerrerocr/warehouse-sector-externo)).
+Both sources give exactly the same results.
+
+## What it finds in my thesis data
+
+Six warnings across the three blocks in [`bloques.yml`](bloques.yml):
+
+| Block | What it asks for | What the engine says |
+|---|---|---|
+| `comercial` | `auto` | VAR in differences (Johansen finds no cointegration). ADF and KPSS contradict each other on the real exchange rate, and the lag criteria range from 2 (BIC) to 12 (AIC) |
+| `financiero` | `auto` | VECM (Johansen rank 1). The lag criteria do not agree |
+| `financiero_mal_pedido` | VECM with 8 lags | Three warnings: a VECM without cointegration, 4 observations per parameter and disagreeing criteria |
 
 ## How a block is declared
 
@@ -61,7 +81,9 @@ BLOQUE  financiero_mal_pedido
       existe. Lo natural acá es VAR en diferencias.
     ! 132 observaciones para 33 parámetros por ecuación: 4.0 por parámetro.
       Debajo de 10 el modelo sobreajusta. Bajá rezagos o sacá una variable.
-    ! Los criterios de rezagos no coinciden: {'aic': 3, 'bic': 2, 'hqic': 2}.
+    ! Los criterios de rezagos no coinciden: {'aic': 3, 'bic': 2, 'hqic': 2, 'fpe': 3}.
+      BIC es el parsimonioso y AIC el generoso; con muestras cortas suele
+      convenir BIC.
 ```
 
 In English, the three warnings say: (1) you asked for a VECM but Johansen finds no
@@ -107,8 +129,20 @@ salidas/<bloque>/
   reporte.md          <- warnings come first
 ```
 
-## Requirements
+## With the full warehouse
+
+To read straight from DuckDB, the three repositories sit side by side and the
+warehouse is built first:
 
 ```bash
-pip install pandas numpy statsmodels duckdb pyyaml tabulate
+git clone https://github.com/pabloguerrerocr/sector-externo-cr-eeuu.git
+git clone https://github.com/pabloguerrerocr/warehouse-sector-externo.git
+git clone https://github.com/pabloguerrerocr/motor-series.git
+cd warehouse-sector-externo
+pip install -r requirements.txt dbt-duckdb
+python 07_pruebas.py
+cd dbt && DBT_PROFILES_DIR=. dbt build && cd ../..
+cd motor-series && python motor.py
 ```
+
+Tested with Python 3.13, statsmodels 0.15 and DuckDB 2.0.
