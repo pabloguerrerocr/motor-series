@@ -2,6 +2,8 @@
 
 *[Versión en español](README.md)*
 
+**Tools:** Python (statsmodels, pandas) · YAML to declare the blocks
+
 **You declare the block in a configuration file and the engine tells you what
 you are betting on before you quote a number.**
 

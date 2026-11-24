@@ -2,6 +2,8 @@
 
 *[English version](README.en.md)*
 
+**Herramientas:** Python (statsmodels, pandas) · YAML para declarar los bloques
+
 **Declarás el bloque en un archivo de configuración y el motor te dice qué te
 estás jugando antes de que cites un número.**
 
